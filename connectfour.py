@@ -6,11 +6,21 @@ import copy
 
 class Grid:
     """Grid class: has properties matrix, has methods __init__, __str__, checkForWin, checkForDraw, dropPiece, simulateMoves, playSimulatedGames """
-    def __init__(self):
-        """__init__(): initialize a Grid """       
-        self.matrix = []
-        for i in range(6):
-            self.matrix.append( [0,0,0,0,0,0,0] )
+    def __init__(self,testGrid):
+        """__init__(): initialize a Grid """
+        if testGrid == 2:       # real game
+            self.matrix = []
+            for i in range(6):
+                self.matrix.append( [0,0,0,0,0,0,0] )
+        elif testGrid == 1:     # testing matrix
+            self.matrix = [
+                            [0,0,0,0,0,0,0],
+                            [1,0,1,1,2,0,0],
+                            [2,0,2,1,2,2,0],
+                            [2,2,1,1,1,1,2],
+                            [1,2,1,2,1,2,1],
+                            [2,1,2,2,2,1,1]
+                ]
 
     def __str__(self):
         """__str__(): override the print method for a Grid """
@@ -86,10 +96,21 @@ class Grid:
 
             #prior to simulation, check if the column is a DO NOT TOUCH column because it would result in sabotaging a victory
             t1 = copy.deepcopy(self)
+            t1specialcase = copy.deepcopy(self)
             t1.dropPiece(c, 2)      #if player two drops first
             t1.dropPiece(c, 1)      #then player one drops next
-            if t1.checkForWin(1):   #if that results in a player one win
-                print('Column', c, '\t', 'DO NOT TOUCH, IT WOULD SABOTAGE A WIN')
+            if t1.checkForWin(1):   #if that results in a player one win - there are two cases:
+                #Case 1 - if I drop in this column, opponent responds with a block, then I respond with a guaranteed win above - requires 3 empty slots
+                t1specialcase.dropPiece(c, 1)
+                t1specialcase.dropPiece(c, 2)
+                t1specialcase.dropPiece(c, 1)
+                if t1specialcase.checkForWin(1):
+                    print('Column', c, '\t', 'SPECIAL CASE: DROP HERE, LET OPPONENT BLOCK, DROP AGAIN FOR WIN')
+                    maxWinsColumn = c
+                    maxWinsValue = 100
+                else:
+                #Case 2 - if I drop in this column, opponent responds with a block - requires 2 empty slots
+                    print('Column', c, '\t', 'DO NOT TOUCH, IT WOULD SABOTAGE A WIN')
             else:
                 wins, losses, draws = self.playSimulatedGames(c, validColumns[:])
                 numberOfSimulations = wins + losses + draws
@@ -248,15 +269,17 @@ class Grid:
     
 
 class Play:
-    """Grid class: has no properties, has methods __init__, startGame """
+    """Play class: has no properties, has methods __init__, startGame """
     def __init__(self):
         """__init__(): initialize a Play object to start a game """ 
         pass
 
 
     def startGame(self):
-        """startGame(): start a Connect 4 game """ 
-        g1 = Grid()
+        """startGame(): start a Connect 4 game """
+        testGrid = int(input('Test or Game?\nTest - enter 1 or Game - enter 2\nEnter 1 (Test) or 2 (Game)\n'))
+        
+        g1 = Grid(testGrid)
         
         response = int(input('Who goes first?\nPlayer 1 (you) or Player 2 (opponent)?\nEnter 1 or 2\n'))
         if response == 1:
